@@ -1,0 +1,26 @@
+Package: transgt
+Type: Package
+Title: Translate genotypes based on a translational table
+Version: 1.0
+Authors@R: c(
+  person("Roman", "Luštrik", email = "roman.lustrik@biolitika.si", role = c("aut", "cre")),
+  person("Marta", "De Barba", email = "marta.debarba@gmail.com", role = "aut")
+  )
+Description: Classical capillary genotyping results in different laboratories yielding relatively
+  different absolute values of genotypes. As alleles are called based on the speed of travelled DNA
+  particles, this can vary from one machine to another. Assuming you have reference sampled in a 
+  reference laboratory, you can construct a translation table. For well behaved loci, you can translate
+  by substracting or adding to the length of DNA fragments, but some loci may be more problematic. In
+  that case, you will need to map a specific translation value for each allele. This package supports
+  translation of both of those cases.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Depends: 
+  R (>= 3.6.0)
+Imports:
+  readxl (>= 1.3.1),
+  tidyr(>= 0.8.3)
+Suggests: 
+    testthat (>= 2.1.1)
+RoxygenNote: 6.1.1
