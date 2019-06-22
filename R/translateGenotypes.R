@@ -34,14 +34,14 @@
 translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
   # If input is not an already formatted table, import it assuming it's an
   # xlsx file. User needs to pass in the sheet name using the ... argument.
-  if (class(input) == "character") {
+  if (any(class(input) %in% "character")) {
     stopifnot(file.exists(input))
     xy <- read_excel(path = input, ...)
   }
 
   # If input is data.frame, make sure it has all the appropriate columns.
-  if (class(input) == "data.frame") {
-    stopifnot(all(c("lab_from", "sample") %in% names(input)))  # TODO: dodaj imena stolpcev
+  if (any(class(input) %in% "data.frame")) {
+    stopifnot(all(c("lab_from", "sample") %in% names(input)))
   }
 
   # The algorithm works on a long format, so we reflow accordingly.
@@ -76,6 +76,13 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
       # If direct translation value available, use that instead. But first,
       # tease it out using the correct allele name.
       ref <- ref[ref$allele_from == roll.i$allele, ]
+
+      # The reference table may have a locus entry, but no data for it. In this case,
+      # we just leave entry as NA.
+      if (all(is.na(ref[, c("allele_from", "allele_ref", "delta")]))) {
+        xy[i, lab] <- NA
+        next
+      }
 
       if (nrow(ref) >= 2) {
         stop(sprintf("Reference from lab %s (locus %s) have more than one translation.

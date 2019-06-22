@@ -27,6 +27,10 @@ test.tbl5 <- as.data.frame(rbind(
   c(lab_from = "lab_lab2", sample = "samplex", loc1_1 = "1", loc1_2 = "1", loc2_1 = NA, loc2_2 = NA)
 ))
 
+test.tbl6 <- as.data.frame(rbind(
+  c(lab_from = "lab_lab3", sample = "sampleX", locX_1 = "3", locX_2 = "1")
+))
+
 ref.tbl <- as.data.frame(rbind(
   c(lab_from = "lab_srb", locus = "loc1", allele_from = NA, allele_ref = NA, delta = 4),
   c(lab_from = "lab_srb", locus = "loc2", allele_from = "98", allele_ref = "50", delta = NA),
@@ -35,7 +39,8 @@ ref.tbl <- as.data.frame(rbind(
   c(lab_from = "lab_srb", locus = "loc2", allele_from = "104", allele_ref = "60", delta = NA),
   c(lab_from = "lab_lab1", locus = "loc2", allele_from = "4", allele_ref = "6", delta = NA),
   c(lab_from = "lab_lab2", locus = "loc1", allele_from = "1", allele_ref = "2", delta = NA),
-  c(lab_from = "lab_lab2", locus = "loc1", allele_from = "1", allele_ref = "4", delta = NA)
+  c(lab_from = "lab_lab2", locus = "loc1", allele_from = "1", allele_ref = "4", delta = NA),
+  c(lab_from = "lab_lab3", locus = "locX", allele_from = NA, allele_ref = NA, delta = NA)
 ), stringsAsFactors = FALSE)
 
 
@@ -79,4 +84,11 @@ test_that("Test writing of output file", {
   expect_true(file.exists("test.txt"))
   unlink("test.txt")
 
+})
+
+test_that("No translational data in reference table", {
+  test4 <- translateGenotypes(input = test.tbl6,
+                              ref_tbl = ref.tbl)
+  expect_equal(test4$translated$locX_1, NA)
+  expect_equal(test4$translated$locX_2, NA)
 })
