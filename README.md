@@ -8,6 +8,7 @@ Following assumptions are made by the package code.
 * Allele lengths are characters that can be coerced to integers.
 * Locus names are constructed as `<string>_1` `<string>_2` for diploid organisms where `<string>` represents an alphanumeric string where `_` is not allowed.
 * You know translational `delta` or direct mapping of alleles from a laboratory relative to the reference laboratory allele. If not, assume NA as this is not directly translatable.
+* Data from only one laboratory is being translated at a time.
 
 # Overview
 Inputs for this package are:

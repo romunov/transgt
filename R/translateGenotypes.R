@@ -44,6 +44,36 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
     stopifnot(all(c("lab_from", "sample") %in% names(input)))
   }
 
+  # Output should have all loci from the reference table. Find loci that are
+  # in reference, but not xy (uncommon.loci), and append those as NA to xy
+  # before translation starts.
+  ref <- ref_tbl[ref_tbl$lab_from == unique(input$lab_from), ]
+  input.loci <- colnames(input)
+  input.loci <- colnames(input)[!(input.loci %in% c("lab_from", "sample"))]
+  input.loci <- unique(gsub("_[1|2]", "", input.loci))
+
+  ref.loci <- unique(ref$locus)
+  uncommon.loci <- ref.loci[!(ref.loci %in% input.loci)]
+  uncommon.loci <- paste(rep(uncommon.loci, each = 2),
+                      c("1", "2"),
+                      sep = "_")
+
+  for (i in uncommon.loci) {
+    input[, i] <- NA
+  }
+
+  # Make sure column order matches the order of loci in reference (ref).
+  ref.order <- paste(rep(unique(ref$locus), each = 2),
+                     c("1", "2"),
+                     sep = "_")
+  ref.order <- c("lab_from", "sample", ref.order)
+
+  if (!all(ref.order %in% colnames(input))) {
+    stop("Reference and input columns do not match. Investigate.")
+  }
+
+  input <- input[, ref.order]
+
   # The algorithm works on a long format, so we reflow accordingly.
   xy <- suppressWarnings(
     gather(input, key = locus, value = allele, -lab_from, -sample)
@@ -57,6 +87,7 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
     # For each line (lab, locus, allele) of data, find corresponding allele
     # in translation table.
     roll.i <- xy[i, ]
+
     # Extract pretty locus name (loc2_1 is now loc2).
     roll.locus <- strsplit(roll.i$locus, "_")[[1]][[1]]
     roll.lab <- roll.i$lab_from

@@ -43,10 +43,11 @@ ref.tbl <- as.data.frame(rbind(
   c(lab_from = "lab_lab3", locus = "locX", allele_from = NA, allele_ref = NA, delta = NA)
 ), stringsAsFactors = FALSE)
 
+ref.tbl2 <- as.data.frame(rbind(
+  c(lab_from = "lab_lab3", locus = "locX", allele_from = NA, allele_ref = NA, delta = 3),
+  c(lab_from = "lab_lab3", locus = "locusExtra", allele_from = NA, allele_ref = NA, delta = NA)
+))
 
-  # TODO: dodaj edge case:
-  #  - narobe translation table, ko ima dve mapiranji
-  #  - naj bo clash, da ima delta in še spec. mapiranje
 test_that("Test normal behavior", {
   test1 <- translateGenotypes(input = test.tbl1, ref_tbl = ref.tbl)$translated
   t1s1 <- test1[test1$sample == "sample1", ]
@@ -63,10 +64,6 @@ test_that("Test no data for lab in translation table.", {
   expect_error(translateGenotypes(input = test.tbl2, ref_tbl = ref.tbl))
 })
 
-test_that("Test no translation data for locus", {
-  expect_error(translateGenotypes(input = test.tbl3, ref_tbl = ref.tbl))
-})
-
 test_that("Test incorrect translation table (one to two translation)", {
   expect_error(translateGenotypes(input = test.tbl4, ref_tbl = ref.tbl))
 })
@@ -80,7 +77,7 @@ test_that("Test if output as long format is working", {
 
 test_that("Test writing of output file", {
   test3 <- translateGenotypes(input = test.tbl1, ref_tbl = ref.tbl,
-                                        output = "test.txt")
+                              output = "test.txt")
   expect_true(file.exists("test.txt"))
   unlink("test.txt")
 
@@ -91,4 +88,13 @@ test_that("No translational data in reference table", {
                               ref_tbl = ref.tbl)
   expect_equal(test4$translated$locX_1, NA)
   expect_equal(test4$translated$locX_2, NA)
+})
+
+test_that("Locus from ref, which is not present in samples, is present", {
+  test5 <- translateGenotypes(input = test.tbl6,
+                              ref_tbl = ref.tbl2)
+  expect_equal(colnames(test5$translated),
+               c("lab_from", "sample", "locX_1", "locX_2", "locusExtra_1",
+                 "locusExtra_2")
+  )
 })
