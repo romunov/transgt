@@ -1,11 +1,11 @@
 #' Translate genotypes
 #'
 #' @param input A data.frame or a (relative) path to a file of alleles to be
-#' translated. Fixed columns are
-#' name of the laboratory, which should match that from \code{ref_tbl}
-#' and sample name (this is for your viewing pleasure only). The varying
-#' columns represent genotype. Make sure columns match names from the
-#' \code{ref_tbl}.
+#' translated. Fixed columns are name of the laboratory, which should match
+#' those from \code{ref_tbl} and sample name (this is for your viewing pleasure
+#' only). The varying columns represent genotypes. Make sure columns match names
+#' from the \code{ref_tbl}. Each locus should be written in two columns and
+#' names should have a suffix of _1 and _2.
 #' @param ref_tbl A data.frame which holds the translation table.
 #' Structure is fixed and the columns are \code{lab_from}, \code{locus},
 #' \code{allele_from}, \code{allele_ref} and \code{delta}. First two columns
@@ -13,6 +13,8 @@
 #' allele values in laboratory of question and the reference (right now the
 #' reference is laboratory from Slovenia). The last column is the amount
 #' an allele should be shifted relative to the reference.
+#' A reference could also be a relative or absolute path to an xlsx file with
+#' columns as described above. Note that names are case sensitive.
 #' @param long Logical. If \code{TRUE}, the result will be returned as a long
 #' table instead of wide. If \code{FALSE} (default), wide table will be
 #' provided.
