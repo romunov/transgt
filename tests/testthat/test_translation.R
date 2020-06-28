@@ -72,7 +72,7 @@ test_that("Test if output as long format is working", {
   test2 <- translateGenotypes(input = test.tbl1, ref_tbl = ref.tbl, long = TRUE)
   expect_equal(ncol(test2), 5)
   expect_equal(nrow(test2), 8)
-  expect_identical(colnames(test2), c("lab_from", "sample", "locus", "allele", "lab_srb"))
+  expect_identical(colnames(test2), c("lab_from", "sample", "locus", "allele", "translated_allele"))
 })
 
 test_that("Test writing of output file", {

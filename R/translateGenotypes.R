@@ -49,19 +49,22 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
   # Output should have all loci from the reference table. Find loci that are
   # in reference, but not xy (uncommon.loci), and append those as NA to xy
   # before translation starts.
-  ref <- ref_tbl[ref_tbl$lab_from == unique(input$lab_from), ]
+  ref <- ref_tbl[ref_tbl$lab_from %in% unique(input$lab_from), ]
+
   input.loci <- colnames(input)
   input.loci <- colnames(input)[!(input.loci %in% c("lab_from", "sample"))]
   input.loci <- unique(gsub("_[1|2]", "", input.loci))
 
   ref.loci <- unique(ref$locus)
   uncommon.loci <- ref.loci[!(ref.loci %in% input.loci)]
-  uncommon.loci <- paste(rep(uncommon.loci, each = 2),
-                      c("1", "2"),
-                      sep = "_")
+  if (length(uncommon.loci) != 0) {
+    uncommon.loci <- paste(rep(uncommon.loci, each = 2),
+                           c("1", "2"),
+                           sep = "_")
 
-  for (i in uncommon.loci) {
-    input[, i] <- NA
+    for (i in uncommon.loci) {
+      input[, i] <- NA
+    }
   }
 
   # Make sure column order matches the order of loci in reference (ref).
@@ -81,17 +84,21 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
     gather(input, key = locus, value = allele, -lab_from, -sample)
   )
 
-  lab <- as.character(unique(xy$lab_from))
-  xy[, lab] <- NA
+  trnslt <- "translated_allele"
+  xy[, trnslt] <- NA
 
   # Algorithm for translating values:
   for (i in 1:nrow(xy)) {
+    # Show indicator only when there's many rows to be translated.
+    if (nrow(xy) > 1000 && (i %% round(0.1 * nrow(xy), -3)) == 0) print(sprintf("Processing %s/%s", i, nrow(xy)))
+
     # For each line (lab, locus, allele) of data, find corresponding allele
     # in translation table.
     roll.i <- xy[i, ]
 
     # Extract pretty locus name (loc2_1 is now loc2).
     roll.locus <- strsplit(roll.i$locus, "_")[[1]][[1]]
+
     roll.lab <- roll.i$lab_from
     ref <- ref_tbl[ref_tbl$locus == roll.locus & ref_tbl$lab_from == roll.lab, ]
 
@@ -104,7 +111,7 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
     # translating. If that's the case, ref will only have one row.
     if (!is.na(ref$delta) && nrow(ref) == 1) {
       # If offset (delta) is provided, calculate new allele based on offset.
-      xy[i, lab] <- as.character(as.numeric(roll.i$allele) + as.numeric(ref$delta))
+      xy[i, trnslt] <- as.character(as.numeric(roll.i$allele) + as.numeric(ref$delta))
     } else {
       # If direct translation value available, use that instead. But first,
       # tease it out using the correct allele name.
@@ -113,7 +120,7 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
       # The reference table may have a locus entry, but no data for it. In this case,
       # we just leave entry as NA.
       if (all(is.na(ref[, c("allele_from", "allele_ref", "delta")]))) {
-        xy[i, lab] <- NA
+        xy[i, trnslt] <- NA
         next
       }
 
@@ -129,7 +136,7 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
       }
 
       if (nrow(ref) == 1) {
-        xy[i, lab] <- ref$allele_ref
+        xy[i, trnslt] <- ref$allele_ref
       }
     }
   }
@@ -140,9 +147,9 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
   }
 
   # Remove the original allele value in order to properly reflow data into
-  # wide format and then reflow into wide format.
+  # wide format.
   xy$allele <- NULL
-  xy <- spread(xy, key = locus, value = lab)
+  xy <- spread(xy, key = locus, value = trnslt)
 
   # Export if file (path)name provided.
   if (!is.na(output)) {
