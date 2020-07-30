@@ -32,6 +32,8 @@
 #' @importFrom readxl read_excel
 #' @importFrom tidyr gather spread
 #' @importFrom utils write.table
+#'
+#' @export
 
 translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
   # If input is not an already formatted table, import it assuming it's an
@@ -121,6 +123,10 @@ translateGenotypes <- function(input, ref_tbl, long = FALSE, output = NA, ...) {
       # we just leave entry as NA.
       if (all(is.na(ref[, c("allele_from", "allele_ref", "delta")]))) {
         xy[i, trnslt] <- NA
+        warning(sprintf("No information provided to translate %s from %s. Consider
+                        removing this locus or setting its delta value to 0 in
+                        the reference table.",
+                        roll.locus, roll.lab))
         next
       }
 

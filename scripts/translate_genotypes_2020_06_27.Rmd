@@ -1,0 +1,106 @@
+---
+title: "Translating brown bear genotypes"
+author: "Roman Luštrik & Marta de Barba"
+date: "2020-07-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+library(tidyr)
+library(transgt)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script translates brown bear genotypes. Data comes from U Grenoble database and uses a manually constructed reference of loci translations.
+
+# Import and prepare data
+```{r}
+microsat.binary <- "./grenoble_microsat.RData"
+
+if (!file.exists(microsat.binary)) {
+  source("import_from_dataset.R")
+} else {
+  load(microsat.binary)
+  # Populates global environment with `microsat` object.
+}
+
+# Fetch translation_table tab of
+# https://docs.google.com/spreadsheets/d/18wZNXmmYMYB1AmVCisQMLHg-swj9HswLUXjMz0akhVI/edit#gid=0
+# and save it as (date)_reference_table.xlsx file.
+reftbl <- read_excel(path = "2020_06_27_reference_table.xlsx", sheet = "translation_table")
+reftbl <- as.data.frame(reftbl)
+
+# Table needed to translate population names to names used in reference table.
+maptbl <- read_excel(path = "2020_06_27_reference_table.xlsx", sheet = "grenoble_dataset_lab_names")
+maptbl$short_name <- NULL
+
+# Genotype data
+head(microsat)
+microsat$loci_name <- trimws(microsat$loci_name)
+microsat$research_group <- trimws(microsat$research_group)
+```
+
+# Prepare reference table
+In order to translate microsatellite data, we also need population name that matches that in the reference table. Translation will happen only for data that have mapping in the reference table.
+```{r}
+ms <- merge(x = microsat, y = maptbl, by.x = "research_group", by.y = "database_name", sort = FALSE, all = TRUE)
+ms <- ms[!is.na(ms$lab_from), ]
+```
+
+```{r}
+# This is because we need allele data in LOC_1 LOC_2 format where each entry is
+# its own column.
+xy <- pivot_wider(
+  data = ms,
+  id_cols = c(lab_from, id_sample),
+  names_from = loci_name,
+  values_from = c(size_all1, size_all2))
+
+xy <- as.data.frame(xy)
+
+colnames(xy) <- gsub(pattern = "^(size_all)(\\d)_(.*)$",
+     replacement = "\\3_\\2",
+     x = colnames(xy))
+
+xy.cols <- colnames(xy)
+
+colnames(xy)[colnames(xy) == "id_sample"] <- "sample"
+
+# out <- translateGenotypes(input = xy, ref_tbl = reftbl, long = TRUE)
+out <- translateGenotypes(input = xy, ref_tbl = reftbl, long = FALSE)
+
+# Prepare data for output
+out$allele <- NULL
+out$side <- gsub("^.*(_\\d)$", replacement = "\\1", x = out$locus)
+out$locus <- gsub("^(.*)_\\d$", replacement = "\\1", x = out$locus)
+
+out <- pivot_wider(data = out, 
+              values_from = translated_allele,
+              names_from = side
+  )
+
+colnames(out)[colnames(out) == "_1"] <- "trans_size_all1"
+colnames(out)[colnames(out) == "_2"] <- "trans_size_all2"
+colnames(out)[colnames(out) == "locus"] <- "loci_name"
+colnames(out)[colnames(out) == "sample"] <- "id_sample"
+
+out <- merge(x = out, y = ms,
+      by = c("lab_from", "id_sample", "loci_name"),
+      sort = FALSE,
+      all = TRUE)
+
+out <- out[, c(colnames(ms), "trans_size_all1", "trans_size_all2")]
+out$lab_from <- NULL
+
+save(out, file = "2020_06_28_translated_genotypes.RData")
+
+write.table(x = out, file = "2020_06_28_translated_genotypes.txt", row.names = FALSE, quote = FALSE, sep = "\t")
+```
+
+```{r}
+microsat[microsat$research_group == "University of Ljubljana · Department of Biology", "id_sample"]
+microsat[microsat$id_sample == 721, ]
+```
+
